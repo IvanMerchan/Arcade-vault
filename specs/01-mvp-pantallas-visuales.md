@@ -1,6 +1,6 @@
 # SPEC 01 — MVP visual: pantallas de Arcade Vault
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** —
 > **Date:** 2026-08-11
 > **Objective:** Portar las 5 pantallas de `references/templates/` a rutas reales del App Router de Next.js 16, reusando el tema ya presente en `app/globals.css`, sin ninguna lógica de juego jugable.
@@ -75,18 +75,18 @@ Sesión mock, solo en cliente, vía `SessionProvider` + `localStorage`:
 
 ## Acceptance criteria
 
-- [ ] `/`, `/juegos/bloque-buster`, `/jugar/bloque-buster`, `/auth` y `/salon` renderizan sin errores en consola.
-- [ ] `/juegos/id-inexistente` y `/jugar/id-inexistente` muestran la pantalla 404 con estética arcade.
-- [ ] En `/`, escribir en el buscador filtra la grilla de juegos por título; seleccionar una categoría filtra por `cat`; si no hay resultados se muestra "NO HAY RESULTADOS".
-- [ ] `/juegos/[id]` muestra portada, tags, sinopsis larga, stats (partidas/mejor global/dificultad) y una tabla de 10 puntuaciones.
-- [ ] En `/jugar/[id]`, la puntuación aumenta sola cada ~220ms; "PAUSA" detiene el incremento y "REANUDAR" lo retoma; "FIN" abre el modal de fin de partida.
-- [ ] Guardar la puntuación en el modal la persiste en `localStorage` (`av_scores`) y muestra el mensaje "PUNTUACIÓN GUARDADA".
-- [ ] En `/auth`, alternar entre "INICIAR SESIÓN" y "CREAR CUENTA" cambia los campos visibles; enviar el formulario o pulsar "JUGAR COMO INVITADO" navega a `/` y el nombre de usuario aparece en el nav.
-- [ ] "Cerrar sesión" desde el nav limpia `av_user` de `localStorage` y el nav vuelve a mostrar "Iniciar Sesión".
-- [ ] En `/salon`, cambiar de pestaña de juego actualiza podio y tabla; con sesión iniciada aparece la fila "TU MEJOR MARCA EN [JUEGO]".
-- [ ] El panel móvil del nav (hamburguesa) abre y cierra correctamente en viewport angosto.
-- [ ] `npm run lint` y `npm run build` terminan sin errores.
-- [ ] Ninguna pantalla contiene lógica de juego jugable (sin canvas, sin loop de físicas, sin manejo de input de juego).
+- [x] `/`, `/juegos/bloque-buster`, `/jugar/bloque-buster`, `/auth` y `/salon` renderizan sin errores en consola.
+- [x] `/juegos/id-inexistente` y `/jugar/id-inexistente` muestran la pantalla 404 con estética arcade.
+- [x] En `/`, escribir en el buscador filtra la grilla de juegos por título; seleccionar una categoría filtra por `cat`; si no hay resultados se muestra "NO HAY RESULTADOS".
+- [x] `/juegos/[id]` muestra portada, tags, sinopsis larga, stats (partidas/mejor global/dificultad) y una tabla de 10 puntuaciones.
+- [x] En `/jugar/[id]`, la puntuación aumenta sola cada ~220ms; "PAUSA" detiene el incremento y "REANUDAR" lo retoma; "FIN" abre el modal de fin de partida.
+- [x] Guardar la puntuación en el modal la persiste en `localStorage` (`av_scores`) y muestra el mensaje "PUNTUACIÓN GUARDADA".
+- [x] En `/auth`, alternar entre "INICIAR SESIÓN" y "CREAR CUENTA" cambia los campos visibles; enviar el formulario o pulsar "JUGAR COMO INVITADO" navega a `/` y el nombre de usuario aparece en el nav.
+- [x] "Cerrar sesión" desde el nav limpia `av_user` de `localStorage` y el nav vuelve a mostrar "Iniciar Sesión".
+- [x] En `/salon`, cambiar de pestaña de juego actualiza podio y tabla; con sesión iniciada aparece la fila "TU MEJOR MARCA EN [JUEGO]".
+- [x] El panel móvil del nav (hamburguesa) abre y cierra correctamente en viewport angosto.
+- [x] `npm run lint` y `npm run build` terminan sin errores.
+- [x] Ninguna pantalla contiene lógica de juego jugable (sin canvas, sin loop de físicas, sin manejo de input de juego).
 
 ---
 
