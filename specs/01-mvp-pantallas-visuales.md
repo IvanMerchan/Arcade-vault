@@ -99,8 +99,10 @@ Sesión mock, solo en cliente, vía `SessionProvider` + `localStorage`:
 - **No:** Context en memoria sin persistencia. Se descartó porque la plantilla persiste explícitamente en `localStorage` y perderlo al recargar sería una regresión visible.
 - **Sí:** reusar las clases existentes de `app/globals.css` (`.card`, `.crt`, `.podium`, etc.) en vez de reescribir en utilidades Tailwind. El CSS ya está portado y probado; reescribirlo arriesga romper animaciones y gradientes complejos sin ganar nada.
 - **Sí:** página 404 con estética arcade (`notFound()` + `app/not-found.tsx`) para ids de juego inválidos. Es una pantalla que no existe en la plantilla SPA original pero se vuelve necesaria al introducir rutas reales.
-- **No:** metadata por pantalla, mejoras de accesibilidad adicionales o `loading.tsx`. El usuario pidió portar la plantilla "solo lo visual", sin pulido fuera de su alcance.
+- **No:** metadata por pantalla ni mejoras de accesibilidad adicionales. El usuario pidió portar la plantilla "solo lo visual", sin pulido fuera de su alcance.
 - **Sí:** sustituir los `<a onClick>` sin `href` de la plantilla por `<Link href>` de Next.js. No es un extra opcional — es obligatorio para que la navegación funcione con rutas reales.
+- **Revertido — Sí, `loading.tsx` por ruta:** la decisión original ("sin `loading.tsx`") asumía que las transiciones serían instantáneas con datos mock locales. Verificación manual del usuario reportó contenido que parpadeaba al navegar. Se añadió `app/loading.tsx`, `app/juegos/[id]/loading.tsx`, `app/jugar/[id]/loading.tsx`, `app/auth/loading.tsx` y `app/salon/loading.tsx`, reutilizando `components/LoadingScreen.tsx` (spinner con la clase `.spinner` ya existente en el tema). Se mantiene como mejora razonable, aunque la investigación posterior encontró que la causa real del parpateo reportado era otra (ver el siguiente punto) — este cambio por sí solo no lo explicaba ni lo arreglaba.
+- **Sí — envolver Nav+main+footer en `<div id="root">`:** causa raíz real del bug de parpadeo. Verificado en navegador real (extensión Claude in Chrome): en `/salon` y en la transición detalle→reproductor, contenido con DOM y CSS computado perfectamente correctos (`opacity:1`, `visibility:visible`, sin overlays encima según `elementFromPoint`) simplemente no se pintaba, incluso forzando estilos de depuración (fondo amarillo, texto "ZZZZZZ") — descartando cualquier causa en el código de la app. Aislado experimentalmente a `.av-bg` (el fondo animado con `mask-image` + `transform: perspective(...) rotateX(...)`): con `.av-bg` oculto, todo se pintaba bien. La plantilla HTML original evitaba este problema envolviendo `Nav`+`main`+`footer` en `<div id="root">`, con una regla `#root { position: relative; z-index: 2; ... }` que **ya existía en `app/globals.css` pero estaba huérfana** — nuestro `app/layout.tsx` nunca recreó ese wrapper (Nav/main/footer quedaron como hijos directos de `<body>`, hermanos de `.av-bg`/`.av-noise` sin contexto de apilamiento propio). Sin ese `z-index` explícito, Chrome fusiona el contenido con las capas complejas (máscara + transform) de `.av-bg` al componer, y esa fusión corrompe el pintado de una franja del contenido tras el primer segundo. Envolver el contenido en `<div id="root">` (como en la plantilla original) resolvió el bug de forma reproducible en dev y en build de producción, verificado visualmente en `/`, `/salon` y la transición `/juegos/[id]` → `/jugar/[id]`.
 
 ---
 
@@ -119,6 +121,6 @@ Sesión mock, solo en cliente, vía `SessionProvider` + `localStorage`:
 - Ningún juego jugable (los 8 "juegos" de `GAMES` siguen siendo solo tarjetas y un HUD simulado).
 - Autenticación, base de datos o API de puntuaciones reales.
 - Tests automatizados.
-- Metadata SEO por pantalla, accesibilidad extendida o estados de carga (`loading.tsx`).
+- Metadata SEO por pantalla o accesibilidad extendida.
 
 Cada uno de estos, si se implementa, va en su propio spec.
