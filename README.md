@@ -11,7 +11,7 @@ https://github.com/Klerith/fernando-skills
 
 ## Skills usadas
 
-```bash
+````bash
 npx skills@latest add Klerith/fernando-skills
 
 ## Commands
@@ -21,4 +21,6 @@ npm run dev     # start dev server (Next.js, Turbopack by default)
 npm run build   # production build
 npm run start   # run production build
 npm run lint    # eslint (flat config, eslint.config.mjs)
-```
+npm run lint:fix # eslint --fix
+npm run format  # prettier --write .
+````
