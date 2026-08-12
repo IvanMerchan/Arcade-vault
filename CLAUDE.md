@@ -19,7 +19,8 @@ There is no test runner configured in `package.json` yet.
 - Next.js 16 App Router (`app/` directory), React 19, TypeScript (strict mode)
 - Tailwind CSS v4 via `@tailwindcss/postcss` (config lives in `postcss.config.mjs`, no `tailwind.config.*` file — v4 uses CSS-based config in `app/globals.css`)
 - Path alias `@/*` maps to repo root (`tsconfig.json`)
-- ESLint flat config extending `eslint-config-next` (core-web-vitals + typescript)
+- ESLint flat config extending `eslint-config-next` (core-web-vitals + typescript), with `eslint-config-prettier` to defer formatting rules to Prettier
+- Prettier (`.prettierrc` / `.prettierignore`) — `npm run format` to format, `npm run lint:fix` to autofix lint. A personal `PostToolUse` hook (`.claude/settings.local.json`, gitignored) also runs both on every file Claude writes/edits.
 
 ## Skills
 
