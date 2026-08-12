@@ -1,6 +1,6 @@
 import { GAMES } from "@/lib/games";
-import { LibraryScreen } from "@/components/LibraryScreen";
+import { Home } from "@/components/Home";
 
-export default function Home() {
-  return <LibraryScreen games={GAMES} />;
+export default function Page() {
+  return <Home games={GAMES} />;
 }
