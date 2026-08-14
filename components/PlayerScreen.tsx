@@ -4,16 +4,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
 import { useSession } from "@/components/SessionProvider";
+import { AsteroidsGame } from "@/components/AsteroidsGame";
 
 export function PlayerScreen({ game }: { game: Game }) {
   const { user, saveScore } = useSession();
+  const isAsteroids = game.id === "asteroides";
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+  const [asteroidsLevel, setAsteroidsLevel] = useState(1);
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState("INVITADO");
   const [saved, setSaved] = useState(false);
-  const level = Math.floor(score / 2500) + 1;
+  const [playId, setPlayId] = useState(0);
+  const level = isAsteroids ? asteroidsLevel : Math.floor(score / 2500) + 1;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync display name to session user resolved after mount
@@ -21,18 +25,25 @@ export function PlayerScreen({ game }: { game: Game }) {
   }, [user]);
 
   useEffect(() => {
-    if (over || paused) return;
+    if (isAsteroids || over || paused) return;
     const t = setInterval(() => setScore((s) => s + Math.floor(10 + Math.random() * 90)), 220);
     return () => clearInterval(t);
-  }, [over, paused]);
+  }, [isAsteroids, over, paused]);
 
   const endGame = () => setOver(true);
   const restart = () => {
     setScore(0);
     setLives(3);
+    setAsteroidsLevel(1);
     setPaused(false);
     setOver(false);
     setSaved(false);
+    setPlayId((id) => id + 1);
+  };
+  const handleStats = (stats: { score: number; lives: number; level: number }) => {
+    setScore(stats.score);
+    setLives(stats.lives);
+    setAsteroidsLevel(stats.level);
   };
 
   return (
@@ -41,7 +52,9 @@ export function PlayerScreen({ game }: { game: Game }) {
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div className="hud-stat">
             <div className="l">Jugador</div>
-            <div className="v" style={{ color: "var(--ink)" }}>{name}</div>
+            <div className="v" style={{ color: "var(--ink)" }}>
+              {name}
+            </div>
           </div>
           <div className="hud-stat">
             <div className="l">Puntuación</div>
@@ -60,25 +73,48 @@ export function PlayerScreen({ game }: { game: Game }) {
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
-          <button className="btn magenta" onClick={endGame}>FIN</button>
-          <Link className="btn ghost" href={`/juegos/${game.id}`}>SALIR</Link>
+          <button className="btn magenta" onClick={endGame}>
+            FIN
+          </button>
+          <Link className="btn ghost" href={`/juegos/${game.id}`}>
+            SALIR
+          </Link>
         </div>
       </div>
 
       <div className="crt">
         <div className="crt-screen">
-          <div className="game-arena">
-            <div className="grid-floor"></div>
-            <div className="enemy e1"></div>
-            <div className="enemy e2"></div>
-            <div className="enemy e3"></div>
-            <div className="player-ship"></div>
-          </div>
+          {isAsteroids ? (
+            <AsteroidsGame
+              key={playId}
+              running={!paused && !over}
+              onStats={handleStats}
+              onGameOver={endGame}
+            />
+          ) : (
+            <div className="game-arena">
+              <div className="grid-floor"></div>
+              <div className="enemy e1"></div>
+              <div className="enemy e2"></div>
+              <div className="enemy e3"></div>
+              <div className="player-ship"></div>
+            </div>
+          )}
           {paused && (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>
-                <div className="pixel neon-yellow" style={{ fontSize: 22 }}>EN PAUSA</div>
-                <div className="mono" style={{ fontSize: 11, color: "var(--ink-dim)", marginTop: 10, letterSpacing: "0.16em" }}>
+                <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
+                  EN PAUSA
+                </div>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    color: "var(--ink-dim)",
+                    marginTop: 10,
+                    letterSpacing: "0.16em",
+                  }}
+                >
                   PULSA REANUDAR PARA CONTINUAR
                 </div>
               </div>
@@ -119,8 +155,12 @@ export function PlayerScreen({ game }: { game: Game }) {
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
             )}
             <div className="actions">
-              <button className="btn" onClick={restart}>JUGAR DE NUEVO</button>
-              <Link className="btn magenta" href="/">VOLVER AL VAULT</Link>
+              <button className="btn" onClick={restart}>
+                JUGAR DE NUEVO
+              </button>
+              <Link className="btn magenta" href="/">
+                VOLVER AL VAULT
+              </Link>
             </div>
           </div>
         </div>
