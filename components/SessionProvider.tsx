@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type User = { name: string };
 
@@ -8,14 +9,15 @@ type ScoreEntry = {
   game: string;
   score: number;
   name: string;
-  at: number;
 };
+
+export type SaveScoreResult = { ok: true } | { ok: false; error: string };
 
 type SessionContextValue = {
   user: User | null;
   signIn: (user: User) => void;
   signOut: () => void;
-  saveScore: (entry: Omit<ScoreEntry, "at">) => void;
+  saveScore: (entry: ScoreEntry) => Promise<SaveScoreResult>;
 };
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -53,14 +55,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const saveScore = (entry: Omit<ScoreEntry, "at">) => {
-    try {
-      const all = JSON.parse(localStorage.getItem("av_scores") || "[]");
-      all.push({ ...entry, at: Date.now() });
-      localStorage.setItem("av_scores", JSON.stringify(all));
-    } catch {
-      // ignore persistence failure
-    }
+  const saveScore = async (entry: ScoreEntry): Promise<SaveScoreResult> => {
+    const supabase = createClient();
+    const { error } = await supabase.from("scores").insert({
+      game_id: entry.game,
+      player_name: entry.name,
+      score: entry.score,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
   };
 
   return (

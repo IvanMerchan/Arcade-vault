@@ -1,6 +1,6 @@
 # SPEC 06 — Leaderboard real (lectura y escritura de puntuaciones)
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 05
 > **Date:** 2026-08-14
 > **Objective:** Sustituir todas las puntuaciones mock por lecturas y escrituras reales de la tabla `scores`, eliminando `seededScores` y `av_scores`.
@@ -75,16 +75,16 @@ saveScore(entry: { game: string; score: number; name: string }): Promise<SaveSco
 
 ## Acceptance criteria
 
-- [ ] `app/juegos/[id]/page.tsx` muestra el top 10 real de `scores` para ese juego, no `seededScores`.
-- [ ] `/salon` muestra podio y tabla reales por pestaña, cargados desde `getAllTopScores` sin requests adicionales al cambiar de pestaña.
-- [ ] Jugar `/jugar/asteroides`, terminar la partida y pulsar GUARDAR PUNTUACIÓN inserta una fila real en `scores` (verificable por MCP: `select * from scores order by created_at desc limit 1` devuelve esa fila con el nombre escrito en el modal).
-- [ ] Esa misma puntuación aparece en `/salon` (pestaña de ese juego) y en `/juegos/asteroides` tras recargar la página.
-- [ ] Guardar una puntuación en cualquiera de los 7 juegos mock también inserta en `scores` con el `game_id` correspondiente.
-- [ ] La fila "TU MEJOR MARCA EN [JUEGO]" solo aparece cuando el usuario tiene al menos una puntuación real en ese juego, y muestra su score y rango reales.
-- [ ] Un intento de guardado con `player_name` de más de 10 caracteres o `score` negativo es rechazado por la base y la UI muestra un mensaje de error, con el botón GUARDAR PUNTUACIÓN reactivado para reintentar.
-- [ ] Con un juego sin ninguna fila en `scores`, el podio, la tabla del Salón y el aside de la ficha muestran "AÚN NO HAY PUNTUACIONES" sin lanzar errores en consola.
-- [ ] `grep -r "seededScores\|av_scores"` no encuentra resultados en el repo.
-- [ ] `npm run lint` y `npm run build` terminan sin errores.
+- [x] `app/juegos/[id]/page.tsx` muestra el top 10 real de `scores` para ese juego, no `seededScores`.
+- [x] `/salon` muestra podio y tabla reales por pestaña, cargados desde `getAllTopScores` sin requests adicionales al cambiar de pestaña.
+- [x] Jugar `/jugar/asteroides`, terminar la partida y pulsar GUARDAR PUNTUACIÓN inserta una fila real en `scores` (verificable por MCP: `select * from scores order by created_at desc limit 1` devuelve esa fila con el nombre escrito en el modal).
+- [x] Esa misma puntuación aparece en `/salon` (pestaña de ese juego) y en `/juegos/asteroides` tras recargar la página.
+- [x] Guardar una puntuación en cualquiera de los 7 juegos mock también inserta en `scores` con el `game_id` correspondiente.
+- [x] La fila "TU MEJOR MARCA EN [JUEGO]" solo aparece cuando el usuario tiene al menos una puntuación real en ese juego, y muestra su score y rango reales.
+- [x] Un intento de guardado con `player_name` de más de 10 caracteres o `score` negativo es rechazado por la base y la UI muestra un mensaje de error, con el botón GUARDAR PUNTUACIÓN reactivado para reintentar.
+- [x] Con un juego sin ninguna fila en `scores`, el podio, la tabla del Salón y el aside de la ficha muestran "AÚN NO HAY PUNTUACIONES" sin lanzar errores en consola.
+- [x] `grep -r "seededScores\|av_scores"` no encuentra resultados en el repo.
+- [x] `npm run lint` y `npm run build` terminan sin errores.
 
 ---
 

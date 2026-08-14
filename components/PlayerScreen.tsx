@@ -16,6 +16,8 @@ export function PlayerScreen({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   const [name, setName] = useState("INVITADO");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [playId, setPlayId] = useState(0);
   const level = isAsteroids ? asteroidsLevel : Math.floor(score / 2500) + 1;
 
@@ -38,7 +40,20 @@ export function PlayerScreen({ game }: { game: Game }) {
     setPaused(false);
     setOver(false);
     setSaved(false);
+    setSaving(false);
+    setSaveError(null);
     setPlayId((id) => id + 1);
+  };
+  const handleSaveScore = async () => {
+    setSaving(true);
+    setSaveError(null);
+    const result = await saveScore({ game: game.id, score, name });
+    setSaving(false);
+    if (result.ok) {
+      setSaved(true);
+    } else {
+      setSaveError(result.error);
+    }
   };
   const handleStats = (stats: { score: number; lives: number; level: number }) => {
     setScore(stats.score);
@@ -140,19 +155,22 @@ export function PlayerScreen({ game }: { game: Game }) {
                   value={name}
                   onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
                   placeholder="TUS INICIALES"
+                  disabled={saving}
                 />
-                <button
-                  className="btn yellow"
-                  onClick={() => {
-                    saveScore({ game: game.id, score, name });
-                    setSaved(true);
-                  }}
-                >
-                  GUARDAR PUNTUACIÓN
+                <button className="btn yellow" onClick={handleSaveScore} disabled={saving}>
+                  {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
                 </button>
               </div>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
+            )}
+            {saveError && (
+              <div
+                className="toast-saved"
+                style={{ color: "var(--magenta)", textShadow: "0 0 8px var(--magenta)" }}
+              >
+                ▸ NO SE PUDO GUARDAR: {saveError}
+              </div>
             )}
             <div className="actions">
               <button className="btn" onClick={restart}>
