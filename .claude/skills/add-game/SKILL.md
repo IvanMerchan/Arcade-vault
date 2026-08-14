@@ -3,7 +3,7 @@ name: add-game
 description: Diseña el spec para añadir un juego real jugable con su leaderboard a Arcade Vault. Pregunta por la fuente (references/started-games o desde cero), mecánica, puntuación y ficha de catálogo, y escribe specs/NN-slug.md. No escribe código.
 disable-model-invocation: true
 argument-hint: "<nombre del juego, id de catálogo, o carpeta de references/started-games>"
-allowed-tools: Read, Glob, Grep, Write, AskUserQuestion, Bash(ls:*), Bash(cat:*), Bash(date:*), mcp__supabase__list_tables
+allowed-tools: Read, Glob, Grep, Write, AskUserQuestion, Bash(date:*), mcp__supabase__list_tables
 ---
 
 # /add-game — Spec para un juego real + su leaderboard
@@ -13,20 +13,7 @@ allowed-tools: Read, Glob, Grep, Write, AskUserQuestion, Bash(ls:*), Bash(cat:*)
 Fecha de hoy (úsala para el header del spec, nunca la adivines):
 !`date +%F`
 
-Specs existentes (para calcular el siguiente número):
-!`ls specs/ 2>/dev/null || echo "La carpeta specs/ no existe todavía"`
-
-Fuentes de referencia disponibles para portar:
-!`ls references/started-games/ 2>/dev/null || echo "references/started-games/ no existe"`
-
-Componentes de juego ya implementados:
-!`ls components/*Game.tsx 2>/dev/null || echo "Ningún juego real implementado todavía"`
-
-Migraciones existentes (para calcular el siguiente número de migración):
-!`ls supabase/migrations/ 2>/dev/null || echo "supabase/migrations/ no existe"`
-
-Estado del registro de juegos jugables:
-!`ls lib/game-registry.ts 2>/dev/null || echo "NO EXISTE — el spec debe incluir el paso de crearlo"`
+El resto del contexto (specs existentes, fuentes de referencia, componentes de juego, migraciones, registro) no se resuelve aquí con `ls`: el cwd de este bloque es la carpeta del skill, no la raíz del repo, así que rutas relativas como `specs/` fallarían. Se resuelve en la Fase 1 con `Glob`, que sí resuelve desde la raíz del repo.
 
 ---
 
@@ -44,10 +31,12 @@ Sigue las fases en orden. No saltes la Fase 3 — las preguntas son las que evit
 
 ### Fase 1 — Contexto
 
-1. Lee, en este orden: `CLAUDE.md` → `.agents/skills/spec/SKILL.md` (convenciones de cómo preguntar y escribir un spec) → `.agents/skills/spec/template.md` (la forma canónica de un spec) → los dos specs más recientes listados en el session context → `porting-guide.md`.
-2. Del listado de `supabase/migrations/`, calcula el siguiente número `000N` disponible (puede no usarse, ver Fase 2).
-3. Del listado de `specs/`, calcula el siguiente número `NN` para el nuevo spec.
-4. Del check de `lib/game-registry.ts` en el session context, decide ya si el plan deberá **crear el registro** (primera vez) o **añadir una línea** (ya existe).
+1. `Glob("specs/*.md")` — lista los specs existentes. Del resultado, calcula el siguiente número `NN` para el nuevo spec (máximo existente + 1; si no hay ninguno, `01`).
+2. `Glob("references/started-games/*")` — lista las fuentes de referencia disponibles para portar.
+3. `Glob("components/*Game.tsx")` — lista los componentes de juego ya implementados.
+4. `Glob("supabase/migrations/*.sql")` — lista las migraciones existentes. Del resultado, calcula el siguiente número `000N` disponible (puede no usarse, ver Fase 2).
+5. `Glob("lib/game-registry.ts")` — si no aparece ningún resultado, el registro no existe todavía y el plan deberá **crearlo**; si aparece, el plan solo **añade una línea** al mapa existente.
+6. Lee, en este orden: `CLAUDE.md` → `.agents/skills/spec/SKILL.md` (convenciones de cómo preguntar y escribir un spec) → `.agents/skills/spec/template.md` (la forma canónica de un spec) → los dos specs más recientes según el resultado del paso 1 → `porting-guide.md`.
 
 ### Fase 2 — Identificar el juego y su fuente
 
@@ -64,7 +53,7 @@ En paralelo, comprueba si el `id` de catálogo que se está usando ya existe en 
 - **Ya existe** → el plan no lleva migración de `games` ni CSS de portada nuevo; solo el componente de juego y (si aplica) el registro.
 - **Es nuevo** → el plan lleva `INSERT` en una migración nueva y una clase `.cover-<slug>`.
 
-Si además `components/<Nombre>Game.tsx` ya existe para ese juego (revisa el listado del session context), dilo explícitamente al usuario — probablemente no hace falta un spec nuevo, o el spec es solo para el registro.
+Si además `components/<Nombre>Game.tsx` ya existe para ese juego (revisa el listado del paso 3 de la Fase 1), dilo explícitamente al usuario — probablemente no hace falta un spec nuevo, o el spec es solo para el registro.
 
 ### Fase 3 — Preguntas
 
@@ -84,7 +73,7 @@ Muestra una tabla con: id, título, categoría, color, cover, sort_order, fuente
 
 ### Fase 5 — Escribir `specs/NN-<slug>.md`
 
-- **Numeración:** el máximo existente en `specs/` más uno.
+- **Numeración:** la `NN` calculada en el paso 1 de la Fase 1.
 - **Fecha:** únicamente la que salió en el session context — nunca la inventes.
 - **Estado:** `Borrador` (este repo usa el set de estados en español).
 - **Depends on:** `SPEC 04, SPEC 05, SPEC 06` (más cualquier otro spec relevante que detectes).
