@@ -77,7 +77,7 @@ export const GAMES: Game[] = [
     plays: "18.0K",
   },
   {
-    id: "rocas",
+    id: "asteroides",
     title: "ROCAS",
     short: "Pulveriza asteroides en gravedad cero.",
     long: "Tu nave triangular flota en vacío absoluto. Dispara y rota para dividir rocas en fragmentos cada vez más pequeños. Cuidado con los OVNIs en el horizonte.",
@@ -120,9 +120,24 @@ export const CATS: Array<"TODOS" | GameCategory> = [
 ];
 
 const PLAYERS = [
-  "PX_KAI", "NEONFOX", "Z3R0COOL", "M00NRYU", "VAULT_07", "GLITCHA",
-  "ATARI_KID", "CYBER_LU", "MAGENTA88", "SCANLINE", "BIT_LORD", "ARKADYA",
-  "DROID_X", "RGB_QUEEN", "PIXEL_DAD", "RETROVIRA", "VECTORX", "JOY_STK",
+  "PX_KAI",
+  "NEONFOX",
+  "Z3R0COOL",
+  "M00NRYU",
+  "VAULT_07",
+  "GLITCHA",
+  "ATARI_KID",
+  "CYBER_LU",
+  "MAGENTA88",
+  "SCANLINE",
+  "BIT_LORD",
+  "ARKADYA",
+  "DROID_X",
+  "RGB_QUEEN",
+  "PIXEL_DAD",
+  "RETROVIRA",
+  "VECTORX",
+  "JOY_STK",
 ];
 
 export function seededScores(seed: number, count = 12): ScoreRow[] {
@@ -142,9 +157,7 @@ export function seededScores(seed: number, count = 12): ScoreRow[] {
     const mon = String(1 + Math.floor(rand() * 12)).padStart(2, "0");
     rows.push({ rank: i + 1, name, score: Math.max(score, 1000), date: `${day}/${mon}/2026` });
   }
-  return rows
-    .sort((a, b) => b.score - a.score)
-    .map((r, i) => ({ ...r, rank: i + 1 }));
+  return rows.sort((a, b) => b.score - a.score).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 export function getGame(id: string): Game | undefined {
