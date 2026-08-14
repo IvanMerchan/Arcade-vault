@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
-import { GAMES, getGame } from "@/lib/games";
+import { getGameById, getGameIds } from "@/lib/queries";
 import { PlayerScreen } from "@/components/PlayerScreen";
 
-export function generateStaticParams() {
-  return GAMES.map((g) => ({ id: g.id }));
+export async function generateStaticParams() {
+  const ids = await getGameIds();
+  return ids.map((id) => ({ id }));
 }
 
 export default async function PlayerPage({ params }: PageProps<"/jugar/[id]">) {
   const { id } = await params;
-  const game = getGame(id);
+  const game = await getGameById(id);
   if (!game) notFound();
 
   return <PlayerScreen game={game} />;
