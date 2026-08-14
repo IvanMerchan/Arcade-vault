@@ -4,14 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
 import { useSession } from "@/components/SessionProvider";
+import { isPlayable } from "@/lib/game-registry";
 import { AsteroidsGame } from "@/components/AsteroidsGame";
+import { TetrisGame } from "@/components/TetrisGame";
 
 export function PlayerScreen({ game }: { game: Game }) {
   const { user, saveScore } = useSession();
-  const isAsteroids = game.id === "asteroides";
+  const Playable = isPlayable(game.id);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
-  const [asteroidsLevel, setAsteroidsLevel] = useState(1);
+  const [gameLevel, setGameLevel] = useState(1);
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState("INVITADO");
@@ -19,7 +21,7 @@ export function PlayerScreen({ game }: { game: Game }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [playId, setPlayId] = useState(0);
-  const level = isAsteroids ? asteroidsLevel : Math.floor(score / 2500) + 1;
+  const level = Playable ? gameLevel : Math.floor(score / 2500) + 1;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync display name to session user resolved after mount
@@ -27,16 +29,16 @@ export function PlayerScreen({ game }: { game: Game }) {
   }, [user]);
 
   useEffect(() => {
-    if (isAsteroids || over || paused) return;
+    if (Playable || over || paused) return;
     const t = setInterval(() => setScore((s) => s + Math.floor(10 + Math.random() * 90)), 220);
     return () => clearInterval(t);
-  }, [isAsteroids, over, paused]);
+  }, [Playable, over, paused]);
 
   const endGame = () => setOver(true);
   const restart = () => {
     setScore(0);
     setLives(3);
-    setAsteroidsLevel(1);
+    setGameLevel(1);
     setPaused(false);
     setOver(false);
     setSaved(false);
@@ -58,7 +60,7 @@ export function PlayerScreen({ game }: { game: Game }) {
   const handleStats = (stats: { score: number; lives: number; level: number }) => {
     setScore(stats.score);
     setLives(stats.lives);
-    setAsteroidsLevel(stats.level);
+    setGameLevel(stats.level);
   };
 
   return (
@@ -99,8 +101,15 @@ export function PlayerScreen({ game }: { game: Game }) {
 
       <div className="crt">
         <div className="crt-screen">
-          {isAsteroids ? (
+          {game.id === "asteroides" ? (
             <AsteroidsGame
+              key={playId}
+              running={!paused && !over}
+              onStats={handleStats}
+              onGameOver={endGame}
+            />
+          ) : game.id === "caida" ? (
+            <TetrisGame
               key={playId}
               running={!paused && !over}
               onStats={handleStats}
