@@ -70,6 +70,8 @@ Always use `/frontend-design` when designing or reshaping UI.
 
 `/add-game` (local, `.claude/skills/add-game/`) designs the spec for wiring up a new playable game + its leaderboard. It only writes `specs/NN-slug.md`, never app code.
 
+The `game-planner` subagent (`.claude/agents/game-planner.md`) decides _which_ game to implement next — it ranks catalog mocks, portable sources in `references/started-games/`, and net-new ideas against the platform's fit criteria, and remembers past rounds in `references/game-suggestions.md` / `references/game-suggestions-todo.md` so it never re-proposes something already `Implementado`. It hands its pick to `/add-game`; it never writes specs or app code itself.
+
 ## Spec Driven Design
 
 Workflow in practice: `/spec` (or `/add-game`) writes `specs/NN-slug.md` in `Borrador` status → user approves it → `/spec-impl NN-slug` creates branch `spec-NN-slug` (`AutoCreateBranch: true` in `specs/.spec-config.yml`) → PR into `main` → spec flips to `Implementado`. Spec convention (see `specs/01`–`07`): section headers in English, body in Spanish, header block with `Status` / `Depends on` / `Date` / `Objective`.
