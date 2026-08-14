@@ -1,5 +1,11 @@
 import { createClient, createStaticClient } from "@/lib/supabase/server";
-import type { Game, GameCategory, GameColor } from "@/lib/games";
+import {
+  formatScoreDate,
+  type Game,
+  type GameCategory,
+  type GameColor,
+  type ScoreRow,
+} from "@/lib/games";
 import type { Tables } from "@/database.types";
 
 type GameRow = Omit<Game, "best" | "plays">;
@@ -72,4 +78,56 @@ export async function getGameIds(): Promise<string[]> {
   if (error) throw error;
 
   return (data ?? []).map((g) => g.id);
+}
+
+type ScoreSelectRow = Pick<Tables<"scores">, "game_id" | "player_name" | "score" | "created_at">;
+
+function toScoreRows(rows: ScoreSelectRow[]): ScoreRow[] {
+  return rows.map((r, i) => ({
+    rank: i + 1,
+    name: r.player_name,
+    score: r.score,
+    date: formatScoreDate(r.created_at),
+  }));
+}
+
+export async function getTopScores(gameId: string, limit: number): Promise<ScoreRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("scores")
+    .select("game_id, player_name, score, created_at")
+    .eq("game_id", gameId)
+    .order("score", { ascending: false })
+    .order("created_at", { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+
+  return toScoreRows(data ?? []);
+}
+
+export async function getAllTopScores(
+  gameIds: string[],
+  limit: number,
+): Promise<Record<string, ScoreRow[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("scores")
+    .select("game_id, player_name, score, created_at")
+    .in("game_id", gameIds)
+    .order("score", { ascending: false })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+
+  const byGame = new Map<string, ScoreSelectRow[]>();
+  for (const row of data ?? []) {
+    const list = byGame.get(row.game_id) ?? [];
+    list.push(row);
+    byGame.set(row.game_id, list);
+  }
+
+  const result: Record<string, ScoreRow[]> = {};
+  for (const id of gameIds) {
+    result[id] = toScoreRows((byGame.get(id) ?? []).slice(0, limit));
+  }
+  return result;
 }
