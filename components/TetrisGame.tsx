@@ -15,6 +15,14 @@ const BOARD_Y = 0;
 const LINE_SCORES = [0, 100, 300, 500, 800];
 const WALL_KICKS = [0, -1, 1, -2, 2];
 
+// Códigos que el juego reconoce (teclado y táctil comparten el mismo vocabulario).
+const HANDLED_CODES = new Set(["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", "KeyX", "Space"]);
+// Mover a los lados y bajar se repiten mientras se mantienen pulsados (DAS);
+// rotar y caída rápida son siempre de un solo disparo por pulsación.
+const DAS_CODES = new Set(["ArrowLeft", "ArrowRight", "ArrowDown"]);
+const DAS_DELAY = 170; // ms hasta la primera repetición
+const DAS_INTERVAL = 50; // ms entre repeticiones siguientes
+
 type PieceShape = number[][];
 
 // Las 7 piezas estándar. El original trae una 8ª pieza "N" (tuerca, gris, 3×3
@@ -76,6 +84,8 @@ type TetrisState = {
   gameOver: boolean;
   gameOverNotified: boolean;
   lastTime: number | null;
+  keys: Record<string, boolean>;
+  dasTimer: Record<string, number>;
 };
 
 function createBoard(): number[][] {
@@ -136,6 +146,8 @@ function createInitialState(): TetrisState {
     gameOver: false,
     gameOverNotified: false,
     lastTime: null,
+    keys: {},
+    dasTimer: {},
   };
 }
 
@@ -218,8 +230,57 @@ function tryRotate(state: TetrisState) {
   }
 }
 
+/** Ejecuta la acción de un `code` una sola vez. Compartida por el disparo inicial (press) y por cada repetición del DAS. */
+function applyAction(code: string, state: TetrisState) {
+  switch (code) {
+    case "ArrowLeft":
+      if (!collide(state.board, state.current.shape, state.current.x - 1, state.current.y))
+        state.current.x--;
+      break;
+    case "ArrowRight":
+      if (!collide(state.board, state.current.shape, state.current.x + 1, state.current.y))
+        state.current.x++;
+      break;
+    case "ArrowDown":
+      softDrop(state);
+      break;
+    case "ArrowUp":
+    case "KeyX":
+      tryRotate(state);
+      break;
+    case "Space":
+      hardDrop(state);
+      break;
+  }
+}
+
+/** Instalado como `press`/`release` del contrato táctil; el teclado llama a las mismas funciones. */
+function press(state: TetrisState, code: string) {
+  if (state.gameOver || state.keys[code]) return;
+  state.keys[code] = true;
+  if (DAS_CODES.has(code)) state.dasTimer[code] = DAS_DELAY;
+  applyAction(code, state);
+}
+
+function release(state: TetrisState, code: string) {
+  state.keys[code] = false;
+  delete state.dasTimer[code];
+}
+
+function updateDAS(state: TetrisState, dt: number) {
+  for (const code of DAS_CODES) {
+    if (!state.keys[code]) continue;
+    state.dasTimer[code] -= dt;
+    if (state.dasTimer[code] <= 0) {
+      state.dasTimer[code] = DAS_INTERVAL;
+      applyAction(code, state);
+    }
+  }
+}
+
 function update(state: TetrisState, dt: number) {
   if (state.gameOver) return;
+  updateDAS(state, dt);
   state.dropAccum += dt;
   if (state.dropAccum >= state.dropInterval) {
     state.dropAccum = 0;
@@ -370,7 +431,13 @@ function draw(ctx: CanvasRenderingContext2D, state: TetrisState, skin: GameSkin)
   drawSidePanels(ctx, state, skin);
 }
 
-export function TetrisGame({ running, onStats, onGameOver, skin }: PlayableGameProps) {
+export function TetrisGame({
+  running,
+  onStats,
+  onGameOver,
+  skin,
+  touchInputRef,
+}: PlayableGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<TetrisState | null>(null);
   const lastStatsRef = useRef<GameStats>({ score: 0, lives: 1, level: 1 });
@@ -416,32 +483,19 @@ export function TetrisGame({ running, onStats, onGameOver, skin }: PlayableGameP
     if (!ctx) return;
 
     function onKeyDown(e: KeyboardEvent) {
-      if (g!.gameOver) return;
-      switch (e.code) {
-        case "ArrowLeft":
-          e.preventDefault();
-          if (!collide(g!.board, g!.current.shape, g!.current.x - 1, g!.current.y)) g!.current.x--;
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          if (!collide(g!.board, g!.current.shape, g!.current.x + 1, g!.current.y)) g!.current.x++;
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          softDrop(g!);
-          break;
-        case "ArrowUp":
-        case "KeyX":
-          e.preventDefault();
-          tryRotate(g!);
-          break;
-        case "Space":
-          e.preventDefault();
-          hardDrop(g!);
-          break;
-      }
+      if (g!.gameOver || e.repeat || !HANDLED_CODES.has(e.code)) return;
+      e.preventDefault();
+      press(g!, e.code);
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      release(g!, e.code);
     }
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    touchInputRef.current = {
+      press: (code) => press(g!, code),
+      release: (code) => release(g!, code),
+    };
 
     function reportStats() {
       const next: GameStats = {
@@ -475,8 +529,10 @@ export function TetrisGame({ running, onStats, onGameOver, skin }: PlayableGameP
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      touchInputRef.current = null;
     };
-  }, [running]);
+  }, [running, touchInputRef]);
 
   return (
     <canvas

@@ -320,7 +320,13 @@ function createInitialState(): GameState {
   };
 }
 
-export function AsteroidsGame({ running, onStats, onGameOver, skin }: PlayableGameProps) {
+export function AsteroidsGame({
+  running,
+  onStats,
+  onGameOver,
+  skin,
+  touchInputRef,
+}: PlayableGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
   const lastStatsRef = useRef<GameStats>({ score: 0, lives: 3, level: 1 });
@@ -371,17 +377,24 @@ export function AsteroidsGame({ running, onStats, onGameOver, skin }: PlayableGa
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    function press(code: string) {
+      g!.justPressed[code] = !g!.keys[code];
+      g!.keys[code] = true;
+    }
+    function release(code: string) {
+      g!.keys[code] = false;
+    }
     function onKeyDown(e: KeyboardEvent) {
-      g!.justPressed[e.code] = !g!.keys[e.code];
-      g!.keys[e.code] = true;
+      press(e.code);
       if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code))
         e.preventDefault();
     }
     function onKeyUp(e: KeyboardEvent) {
-      g!.keys[e.code] = false;
+      release(e.code);
     }
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    touchInputRef.current = { press, release };
 
     function pressed(code: string) {
       const val = g!.justPressed[code];
@@ -510,8 +523,9 @@ export function AsteroidsGame({ running, onStats, onGameOver, skin }: PlayableGa
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      touchInputRef.current = null;
     };
-  }, [running]);
+  }, [running, touchInputRef]);
 
   return (
     <canvas

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Press_Start_2P, JetBrains_Mono, Courier_Prime } from "next/font/google";
 import { SessionProvider } from "@/components/SessionProvider";
 import { Nav } from "@/components/Nav";
@@ -25,6 +25,12 @@ const courierPrime = Courier_Prime({
 export const metadata: Metadata = {
   title: "Arcade Vault · Portal Retro",
   description: "Plataforma para jugar online y competir por la mayor cantidad de puntos.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
