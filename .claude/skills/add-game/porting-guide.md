@@ -15,6 +15,8 @@ type PlayableGameProps = {
   running: boolean; // arranca/detiene el loop y los listeners de teclado
   onStats: (stats: GameStats) => void; // solo cuando el valor realmente cambia, no por frame
   onGameOver: (finalScore: number) => void; // una sola vez, con guard interno
+  skin: GameSkin; // aspecto visual activo (lib/game-skins.ts) — se refleja en un
+  // useRef, nunca entra en las deps del efecto principal ni en key={playId}
 };
 ```
 
@@ -161,7 +163,7 @@ Reemplazos exactos sobre el archivo actual:
   ```
 
 - `handleStats` pasa a usar `setGameLevel` en vez de `setAsteroidsLevel`.
-- `AsteroidsGame.tsx` puede seguir declarando su propio `AsteroidsGameProps` local, pero debe ser estructuralmente idéntico a `PlayableGameProps` del registro (o importarlo de ahí) para que el `Record<string, ComponentType<PlayableGameProps>>` tipe sin `any`.
+- `AsteroidsGame.tsx` ya no declara un tipo de props local: importa `PlayableGameProps` directamente de `lib/game-registry.ts`, igual que `TetrisGame.tsx`. Un juego nuevo debe hacer lo mismo desde el principio — no dupliques la forma del contrato.
 
 ## 5. Plantilla de migración para el catálogo
 

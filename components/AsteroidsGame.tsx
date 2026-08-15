@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { GameStats, PlayableGameProps } from "@/lib/game-registry";
+import { hexToRgb, type GameSkin } from "@/lib/game-skins";
 
 const W = 800;
 const H = 600;
@@ -10,6 +12,16 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y);
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const randInt = (min: number, max: number) => Math.floor(rand(min, max + 1));
+
+/** Aplica (o limpia) el glow de la skin activa sobre el contexto antes/después de un trazo. */
+function withGlow(ctx: CanvasRenderingContext2D, skin: GameSkin, color: string, draw: () => void) {
+  if (skin.glow > 0) {
+    ctx.shadowBlur = skin.glow;
+    ctx.shadowColor = color;
+  }
+  draw();
+  if (skin.glow > 0) ctx.shadowBlur = 0;
+}
 
 class Bullet {
   x: number;
@@ -38,11 +50,13 @@ class Bullet {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
+  draw(ctx: CanvasRenderingContext2D, skin: GameSkin) {
+    withGlow(ctx, skin, skin.primary, () => {
+      ctx.fillStyle = skin.primary;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
   }
 }
 
@@ -99,18 +113,22 @@ class Asteroid {
     ];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, skin: GameSkin) {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = skin.primary;
+    // La skin retro usa un trazo más grueso, sin glow — técnica de vector CRT
+    // fosforescente en vez del relleno translúcido con shadowBlur de neón.
+    ctx.lineWidth = skin.id === "retro" ? 2 : 1.5;
     ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(this.verts[0][0], this.verts[0][1]);
-    for (let i = 1; i < this.verts.length; i++) ctx.lineTo(this.verts[i][0], this.verts[i][1]);
-    ctx.closePath();
-    ctx.stroke();
+    withGlow(ctx, skin, skin.primary, () => {
+      ctx.beginPath();
+      ctx.moveTo(this.verts[0][0], this.verts[0][1]);
+      for (let i = 1; i < this.verts.length; i++) ctx.lineTo(this.verts[i][0], this.verts[i][1]);
+      ctx.closePath();
+      ctx.stroke();
+    });
     ctx.restore();
   }
 }
@@ -176,32 +194,36 @@ class Ship {
     return [new Bullet(ox, oy, this.angle)];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, skin: GameSkin) {
     if (this.dead) return;
     if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0) return;
 
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = skin.primary;
+    ctx.lineWidth = skin.id === "retro" ? 2 : 1.5;
     ctx.lineJoin = "round";
 
-    ctx.beginPath();
-    ctx.moveTo(20, 0);
-    ctx.lineTo(-12, -9);
-    ctx.lineTo(-7, 0);
-    ctx.lineTo(-12, 9);
-    ctx.closePath();
-    ctx.stroke();
+    withGlow(ctx, skin, skin.primary, () => {
+      ctx.beginPath();
+      ctx.moveTo(20, 0);
+      ctx.lineTo(-12, -9);
+      ctx.lineTo(-7, 0);
+      ctx.lineTo(-12, 9);
+      ctx.closePath();
+      ctx.stroke();
+    });
 
     if (this.thrusting && Math.random() > 0.35) {
-      ctx.beginPath();
-      ctx.moveTo(-8, -4);
-      ctx.lineTo(-8 - rand(6, 14), 0);
-      ctx.lineTo(-8, 4);
-      ctx.strokeStyle = "rgba(255, 130, 0, 0.85)";
-      ctx.stroke();
+      withGlow(ctx, skin, skin.accent, () => {
+        ctx.beginPath();
+        ctx.moveTo(-8, -4);
+        ctx.lineTo(-8 - rand(6, 14), 0);
+        ctx.lineTo(-8, 4);
+        ctx.strokeStyle = skin.accent;
+        ctx.stroke();
+      });
     }
 
     ctx.restore();
@@ -236,9 +258,10 @@ class Particle {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, skin: GameSkin) {
     const alpha = this.ttl / this.life;
-    ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+    const { r, g, b } = hexToRgb(skin.primary);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y);
@@ -258,14 +281,6 @@ function spawnAsteroids(list: Asteroid[], count: number) {
     list.push(new Asteroid(x, y, 3));
   }
 }
-
-type Stats = { score: number; lives: number; level: number };
-
-export type AsteroidsGameProps = {
-  running: boolean;
-  onStats: (stats: Stats) => void;
-  onGameOver: (finalScore: number) => void;
-};
 
 type GameLifecycle = "playing" | "dead" | "gameover";
 
@@ -305,12 +320,13 @@ function createInitialState(): GameState {
   };
 }
 
-export function AsteroidsGame({ running, onStats, onGameOver }: AsteroidsGameProps) {
+export function AsteroidsGame({ running, onStats, onGameOver, skin }: PlayableGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
-  const lastStatsRef = useRef<Stats>({ score: 0, lives: 3, level: 1 });
+  const lastStatsRef = useRef<GameStats>({ score: 0, lives: 3, level: 1 });
   const onStatsRef = useRef(onStats);
   const onGameOverRef = useRef(onGameOver);
+  const skinRef = useRef(skin);
 
   useEffect(() => {
     onStatsRef.current = onStats;
@@ -320,10 +336,32 @@ export function AsteroidsGame({ running, onStats, onGameOver }: AsteroidsGamePro
     onGameOverRef.current = onGameOver;
   }, [onGameOver]);
 
+  // La skin viaja por ref, no por dependencia del efecto principal: cambiarla no
+  // debe reiniciar el loop de requestAnimationFrame ni la partida en curso.
+  useEffect(() => {
+    skinRef.current = skin;
+  }, [skin]);
+
   useEffect(() => {
     gameRef.current = createInitialState();
     lastStatsRef.current = { score: 0, lives: 3, level: 1 };
   }, []);
+
+  // Si el jugador cambia de skin mientras está en pausa, el loop de rAF no está
+  // corriendo para repintar con el frame nuevo — se repinta una vez a mano para
+  // que el cambio se vea de inmediato en vez de esperar a reanudar.
+  useEffect(() => {
+    if (running) return;
+    const ctx = canvasRef.current?.getContext("2d");
+    const g = gameRef.current;
+    if (!ctx || !g) return;
+    ctx.fillStyle = skin.bg;
+    ctx.fillRect(0, 0, W, H);
+    g.particles.forEach((p) => p.draw(ctx, skin));
+    g.asteroids.forEach((a) => a.draw(ctx, skin));
+    g.bullets.forEach((b) => b.draw(ctx, skin));
+    g.ship.draw(ctx, skin);
+  }, [skin, running]);
 
   useEffect(() => {
     if (!running) return;
@@ -434,16 +472,17 @@ export function AsteroidsGame({ running, onStats, onGameOver }: AsteroidsGamePro
     }
 
     function draw() {
-      ctx!.fillStyle = "#000";
+      const currentSkin = skinRef.current;
+      ctx!.fillStyle = currentSkin.bg;
       ctx!.fillRect(0, 0, W, H);
-      g!.particles.forEach((p) => p.draw(ctx!));
-      g!.asteroids.forEach((a) => a.draw(ctx!));
-      g!.bullets.forEach((b) => b.draw(ctx!));
-      g!.ship.draw(ctx!);
+      g!.particles.forEach((p) => p.draw(ctx!, currentSkin));
+      g!.asteroids.forEach((a) => a.draw(ctx!, currentSkin));
+      g!.bullets.forEach((b) => b.draw(ctx!, currentSkin));
+      g!.ship.draw(ctx!, currentSkin);
     }
 
     function reportStats() {
-      const next: Stats = { score: g!.score, lives: Math.max(g!.lives, 0), level: g!.level };
+      const next: GameStats = { score: g!.score, lives: Math.max(g!.lives, 0), level: g!.level };
       const prev = lastStatsRef.current;
       if (next.score !== prev.score || next.lives !== prev.lives || next.level !== prev.level) {
         lastStatsRef.current = next;
