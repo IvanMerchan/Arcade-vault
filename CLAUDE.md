@@ -72,6 +72,8 @@ Always use `/frontend-design` when designing or reshaping UI.
 
 The `game-planner` subagent (`.claude/agents/game-planner.md`) decides _which_ game to implement next — it ranks catalog mocks, portable sources in `references/started-games/`, and net-new ideas against the platform's fit criteria, and remembers past rounds in `references/game-suggestions.md` / `references/game-suggestions-todo.md` so it never re-proposes something already `Implementado`. It hands its pick to `/add-game`; it never writes specs or app code itself.
 
+The `game-jam` subagent (`.claude/agents/game-jam.md`) turns a creative theme into a full spec package instead of ranking the existing catalog — given a theme, it proposes 3 mechanically distinct concepts, lets the user pick one via `AskUserQuestion`, and writes 3 specs (`gameplay` / `integracion` / `pulido`) into `specs/game-jam/<game-id>/`, all `Borrador`. It reads `references/game-suggestions*.md` only to avoid duplicate ids/concepts — it never writes to them, never touches the numbered `specs/*.md` sequence, and never writes app code.
+
 ## Spec Driven Design
 
 Workflow in practice: `/spec` (or `/add-game`) writes `specs/NN-slug.md` in `Borrador` status → user approves it → `/spec-impl NN-slug` creates branch `spec-NN-slug` (`AutoCreateBranch: true` in `specs/.spec-config.yml`) → PR into `main` → spec flips to `Implementado`. Spec convention (see `specs/01`–`07`): section headers in English, body in Spanish, header block with `Status` / `Depends on` / `Date` / `Objective`.
