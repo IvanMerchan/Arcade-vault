@@ -54,7 +54,7 @@ There is no test runner configured in `package.json` yet. Every spec's acceptanc
 
 `lib/game-registry.ts` maps a `game.id` to a real playable component; today `isPlayable()` covers `{"asteroides", "caida"}`. `components/PlayerScreen.tsx` statically imports `AsteroidsGame` and `TetrisGame` and falls back to a mock arena (`setInterval`-driven score) for the other 6 catalog entries.
 
-Contract every playable component implements: `{ running, onStats, onGameOver }`. `running = !paused && !over`; going `false` cancels the `requestAnimationFrame` loop and removes the keyboard listeners — that's what lets the "TUS INICIALES" input capture arrow keys after game over.
+Contract every playable component implements: `{ running, onStats, onGameOver, skin }` (`PlayableGameProps` in `lib/game-registry.ts`). `running = !paused && !over`; going `false` cancels the `requestAnimationFrame` loop and removes the keyboard listeners — that's what lets the "TUS INICIALES" input capture arrow keys after game over. `skin: GameSkin` (`lib/game-skins.ts`) carries the active visual theme (`clasico`/`neon`/`retro`); it's mirrored into a `useRef` like `onStats`/`onGameOver` and must never join the effect's dependency array or `PlayerScreen`'s `key={playId}` — changing it must not restart the loop or the game. `PlayerScreen` owns the selection and persists it globally in `localStorage` (`arcade-vault:skin`).
 
 Rules for a new game component: `"use client"`; all mutable state in a single `useRef`, never `useState` (avoids re-renders at 60fps); `onStats` fires only when a value actually changed; `onGameOver` fires once per playthrough; fixed internal canvas resolution 800×600 (4:3, matching `.crt-screen`); the component draws neither its own HUD nor its own game-over overlay — that's `PlayerScreen`'s job.
 
@@ -69,6 +69,12 @@ Always use `/frontend-design` when designing or reshaping UI.
 `/spec` and `/spec-impl` are installed (`.claude/skills/`, mirrored in `.agents/skills/`, pinned in `skills-lock.json` from `Klerith/fernando-skills`) — spec-driven development is active, not just intended.
 
 `/add-game` (local, `.claude/skills/add-game/`) designs the spec for wiring up a new playable game + its leaderboard. It only writes `specs/NN-slug.md`, never app code.
+
+The `game-planner` subagent (`.claude/agents/game-planner.md`) decides _which_ game to implement next — it ranks catalog mocks, portable sources in `references/started-games/`, and net-new ideas against the platform's fit criteria, and remembers past rounds in `references/game-suggestions.md` / `references/game-suggestions-todo.md` so it never re-proposes something already `Implementado`. It hands its pick to `/add-game`; it never writes specs or app code itself.
+
+The `game-jam` subagent (`.claude/agents/game-jam.md`) turns a creative theme into a full spec package instead of ranking the existing catalog — given a theme, it proposes 3 mechanically distinct concepts, lets the user pick one via `AskUserQuestion`, and writes 3 specs (`gameplay` / `integracion` / `pulido`) into `specs/game-jam/<game-id>/`, all `Borrador`. It reads `references/game-suggestions*.md` only to avoid duplicate ids/concepts — it never writes to them, never touches the numbered `specs/*.md` sequence, and never writes app code.
+
+The `skin-designer` subagent (`.claude/agents/skin-designer.md`) is the exception to the "agents never write app code" rule — it audits every playable game against the 3-skin requirement (`clasico`/`neon`/`retro`, see above) and, when one is missing or partial, implements it directly in `lib/game-skins.ts` and `components/*Game.tsx` **for exactly one game per run** — whichever the user names explicitly, never all of them in one pass — validating legibility with a WCAG contrast check against `--bg` (the app is dark-only, no light mode). Its memory lives in `references/game-with-themes.md`. Scope is limited to games with a real draw component — the 6 mock catalog entries are out of reach until they get one.
 
 ## Spec Driven Design
 

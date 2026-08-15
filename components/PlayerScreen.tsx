@@ -1,16 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
 import { useSession } from "@/components/SessionProvider";
-import { isPlayable } from "@/lib/game-registry";
+import { isPlayable, type TouchInputHandle } from "@/lib/game-registry";
 import { AsteroidsGame } from "@/components/AsteroidsGame";
 import { TetrisGame } from "@/components/TetrisGame";
+import { SkinSwitch } from "@/components/SkinSwitch";
+import { TouchControls } from "@/components/TouchControls";
+import { getTouchLayout } from "@/lib/touch-controls";
+import { DEFAULT_SKIN, getSkin, type SkinId } from "@/lib/game-skins";
+
+const SKIN_STORAGE_KEY = "arcade-vault:skin";
 
 export function PlayerScreen({ game }: { game: Game }) {
   const { user, saveScore } = useSession();
   const Playable = isPlayable(game.id);
+  const [skinId, setSkinId] = useState<SkinId>(DEFAULT_SKIN);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [gameLevel, setGameLevel] = useState(1);
@@ -21,6 +28,8 @@ export function PlayerScreen({ game }: { game: Game }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [playId, setPlayId] = useState(0);
+  const touchInputRef = useRef<TouchInputHandle | null>(null);
+  const touchLayout = Playable ? getTouchLayout(game.id) : null;
   const level = Playable ? gameLevel : Math.floor(score / 2500) + 1;
 
   useEffect(() => {
@@ -29,10 +38,34 @@ export function PlayerScreen({ game }: { game: Game }) {
   }, [user]);
 
   useEffect(() => {
+    document.body.classList.add("is-playing");
+    return () => document.body.classList.remove("is-playing");
+  }, []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(SKIN_STORAGE_KEY) as SkinId | null;
+    if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync persisted skin preference resolved after mount
+      setSkinId(stored);
+    }
+  }, []);
+
+  const handleSkinChange = (id: SkinId) => {
+    setSkinId(id);
+    window.localStorage.setItem(SKIN_STORAGE_KEY, id);
+  };
+  const skin = getSkin(skinId);
+
+  useEffect(() => {
     if (Playable || over || paused) return;
     const t = setInterval(() => setScore((s) => s + Math.floor(10 + Math.random() * 90)), 220);
     return () => clearInterval(t);
   }, [Playable, over, paused]);
+
+  useEffect(() => {
+    if (!touchLayout || (!paused && !over)) return;
+    for (const btn of touchLayout) touchInputRef.current?.release(btn.code);
+  }, [touchLayout, paused, over]);
 
   const endGame = () => setOver(true);
   const restart = () => {
@@ -87,6 +120,7 @@ export function PlayerScreen({ game }: { game: Game }) {
           </div>
         </div>
         <div className="hud-actions">
+          {Playable && <SkinSwitch value={skinId} onChange={handleSkinChange} />}
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
@@ -107,6 +141,8 @@ export function PlayerScreen({ game }: { game: Game }) {
               running={!paused && !over}
               onStats={handleStats}
               onGameOver={endGame}
+              skin={skin}
+              touchInputRef={touchInputRef}
             />
           ) : game.id === "caida" ? (
             <TetrisGame
@@ -114,6 +150,8 @@ export function PlayerScreen({ game }: { game: Game }) {
               running={!paused && !over}
               onStats={handleStats}
               onGameOver={endGame}
+              skin={skin}
+              touchInputRef={touchInputRef}
             />
           ) : (
             <div className="game-arena">
@@ -152,6 +190,15 @@ export function PlayerScreen({ game }: { game: Game }) {
         </div>
       </div>
 
+      {touchLayout && (
+        <TouchControls
+          buttons={touchLayout}
+          skin={skin}
+          onPress={(code) => touchInputRef.current?.press(code)}
+          onRelease={(code) => touchInputRef.current?.release(code)}
+        />
+      )}
+
       {over && (
         <div className="modal-bd">
           <div className="modal">
@@ -165,6 +212,10 @@ export function PlayerScreen({ game }: { game: Game }) {
                   onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
                   placeholder="TUS INICIALES"
                   disabled={saving}
+                  inputMode="text"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
                 />
                 <button className="btn yellow" onClick={handleSaveScore} disabled={saving}>
                   {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
