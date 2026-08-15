@@ -24,6 +24,7 @@ npx skills@latest add Klerith/fernando-skills
 ## Agentes
 
 - `game-planner` (`.claude/agents/game-planner.md`) — decide qué juego implementar a continuación (analiza catálogo, DB y fuentes portables en `references/started-games/`, mantiene memoria de rondas en `references/game-suggestions.md`). Su salida se entrega a `/add-game`.
+- `mobile-porter` (`.claude/agents/mobile-porter.md`) — audita y arregla la vista móvil de `/`, `/biblioteca`, `/juegos/[id]`, `/salon` y `/auth` (las rutas que SPEC 08 dejó fuera de su alcance), una ruta por pasada, usando `specs/08-controles-tactiles-movil.md` como referencia técnica. Memoria en `references/mobile-audit.md`.
 
 ## Commands
 
