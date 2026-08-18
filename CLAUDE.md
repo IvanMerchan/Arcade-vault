@@ -66,9 +66,11 @@ Detailed reference: `.claude/skills/add-game/porting-guide.md`. Portable sources
 
 Always use `/frontend-design` when designing or reshaping UI.
 
-`/spec` and `/spec-impl` are installed (`.claude/skills/`, mirrored in `.agents/skills/`, pinned in `skills-lock.json` from `Klerith/fernando-skills`) — spec-driven development is active, not just intended.
+`/spec` and `/spec-impl` are installed (real files live in `.agents/skills/`, `.claude/skills/` holds symlinks to them, pinned in `skills-lock.json` from `Klerith/fernando-skills`) — spec-driven development is active, not just intended.
 
 `/add-game` (local, `.claude/skills/add-game/`) designs the spec for wiring up a new playable game + its leaderboard. It only writes `specs/NN-slug.md`, never app code.
+
+`/spec-impl-game` (local, `.claude/skills/spec-impl-game/`) is the game-spec variant of `/spec-impl` — it runs `/spec-impl` unchanged (same state gate, same branch, same step-by-step pauses) and, once the plan is fully implemented, chains `skin-designer` then `mobile-porter`, one after the other, never in parallel, asking for explicit confirmation before each. It also resolves specs nested under `specs/game-jam/<id>/` or `specs/frogger/`, which the flat `ls specs/` in `/spec-impl` doesn't see. Use it instead of `/spec-impl` whenever the spec adds or changes a playable game.
 
 The `game-planner` subagent (`.claude/agents/game-planner.md`) decides _which_ game to implement next — it ranks catalog mocks, portable sources in `references/started-games/`, and net-new ideas against the platform's fit criteria, and remembers past rounds in `references/game-suggestions.md` / `references/game-suggestions-todo.md` so it never re-proposes something already `Implementado`. It hands its pick to `/add-game`; it never writes specs or app code itself.
 
@@ -80,7 +82,7 @@ The `mobile-porter` subagent (`.claude/agents/mobile-porter.md`) is the other ex
 
 ## Spec Driven Design
 
-Workflow in practice: `/spec` (or `/add-game`) writes `specs/NN-slug.md` in `Borrador` status → user approves it → `/spec-impl NN-slug` creates branch `spec-NN-slug` (`AutoCreateBranch: true` in `specs/.spec-config.yml`) → PR into `main` → spec flips to `Implementado`. Spec convention (see `specs/01`–`07`): section headers in English, body in Spanish, header block with `Status` / `Depends on` / `Date` / `Objective`.
+Workflow in practice: `/spec` (or `/add-game`) writes `specs/NN-slug.md` in `Borrador` status → user approves it → `/spec-impl NN-slug` creates branch `spec-NN-slug` (`AutoCreateBranch: true` in `specs/.spec-config.yml`) → PR into `main` → spec flips to `Implementado`. For a game spec, use `/spec-impl-game NN-slug` instead — same flow, plus it chains `skin-designer` and `mobile-porter` afterward, and it resolves specs nested under `specs/game-jam/` or `specs/frogger/`. Spec convention (see `specs/01`–`07`): section headers in English, body in Spanish, header block with `Status` / `Depends on` / `Date` / `Objective`.
 
 ## Commands
 

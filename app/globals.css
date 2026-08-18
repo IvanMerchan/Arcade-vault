@@ -793,6 +793,34 @@ a {
   filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.4));
 }
 
+.cover-frogger {
+  background: linear-gradient(180deg, #1a1a1a, #0a0a18);
+}
+.cover-frogger::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, var(--yellow) 0 16px, transparent 16px 32px) 0 30% / 100% 3px
+      no-repeat,
+    repeating-linear-gradient(90deg, var(--yellow) 0 16px, transparent 16px 32px) 0 70% / 100% 3px
+      no-repeat,
+    linear-gradient(var(--magenta), var(--magenta)) 15% 20% / 30px 14px no-repeat,
+    linear-gradient(var(--cyan), var(--cyan)) 60% 78% / 30px 14px no-repeat;
+  filter: drop-shadow(0 0 6px rgba(245, 255, 0, 0.3));
+}
+.cover-frogger::before {
+  content: "";
+  position: absolute;
+  left: 48%;
+  top: 48%;
+  width: 24px;
+  height: 20px;
+  background: var(--green);
+  border-radius: 50% 50% 40% 40%;
+  box-shadow: 0 0 8px var(--green);
+}
+
 /* ===== detail screen ===== */
 .av-detail {
   display: grid;
@@ -1315,6 +1343,26 @@ a {
     min-height: 44px;
   }
 
+  .lb-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .auth-tabs button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+
   body.is-playing {
     overflow: hidden;
     overscroll-behavior: none;
@@ -1456,6 +1504,11 @@ a {
 .field input:focus {
   border-color: var(--cyan);
   box-shadow: 0 0 12px rgba(0, 245, 255, 0.35);
+}
+@media (max-width: 720px) {
+  .field input {
+    font-size: 16px;
+  }
 }
 .auth-divider {
   display: flex;
@@ -1666,11 +1719,19 @@ a {
 }
 
 @media (max-width: 720px) {
+  .hall-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   .hall-table .th,
   .hall-table .tr {
     grid-template-columns: 50px 1fr 90px 90px;
     font-size: 12px;
     padding: 10px 12px;
+    min-width: fit-content;
+  }
+  .hall-table .tr .pl {
+    white-space: nowrap;
   }
   .av-grid {
     padding: 0 16px;
@@ -1681,12 +1742,22 @@ a {
   .av-filters {
     padding: 0 16px;
   }
+  .av-search input {
+    font-size: 16px;
+  }
   .av-hall {
     padding: 0 16px;
   }
   .av-detail {
     padding: 0 16px;
     margin: 24px auto;
+  }
+  .detail-tags span {
+    font-size: 10px;
+  }
+  .stat-strip .v {
+    font-size: 12px;
+    overflow-wrap: anywhere;
   }
   .av-player {
     padding: 0 16px 32px;

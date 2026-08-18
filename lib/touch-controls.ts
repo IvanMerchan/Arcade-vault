@@ -24,6 +24,12 @@ export const TOUCH_LAYOUTS: Record<string, TouchButton[]> = {
     { code: "ArrowUp", glyph: "⟳", aria: "Rotar", side: "right" },
     { code: "Space", glyph: "⬇", aria: "Caída rápida", side: "right" },
   ],
+  frogger: [
+    { code: "ArrowLeft", glyph: "◀", aria: "Saltar a la izquierda", side: "left" },
+    { code: "ArrowRight", glyph: "▶", aria: "Saltar a la derecha", side: "left" },
+    { code: "ArrowUp", glyph: "▲", aria: "Saltar hacia arriba", side: "right" },
+    { code: "ArrowDown", glyph: "▼", aria: "Saltar hacia abajo", side: "right" },
+  ],
 };
 
 export function getTouchLayout(gameId: string): TouchButton[] | null {
