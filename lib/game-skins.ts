@@ -34,7 +34,13 @@ export type GameSkin = {
   primary: string;
   /** Acento: llama del propulsor, resaltados secundarios. */
   accent: string;
-  /** 7 colores para juegos de piezas (Tetris), indexados 0-6 = piezas I,O,T,S,Z,J,L. */
+  /**
+   * 7 colores de acento variados, ya verificados ≥3:1 contra `bg` en las 3
+   * skins. Indexados 0-6 = piezas I,O,T,S,Z,J,L en juegos de piezas
+   * (Tetris); reutilizados como paleta general de variedad en otros juegos
+   * que necesiten varios acentos distintos (p. ej. FroggerGame: coches,
+   * camión, tortugas, semáforo de urgencia del HUD).
+   */
   pieces: string[];
   /** shadowBlur a aplicar en trazos con glow; 0 = sin glow (técnica plana). */
   glow: number;

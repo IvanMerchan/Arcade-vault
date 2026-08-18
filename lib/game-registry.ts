@@ -17,7 +17,7 @@ export type PlayableGameProps = {
   touchInputRef: RefObject<TouchInputHandle | null>;
 };
 
-const PLAYABLE_GAME_IDS = new Set(["asteroides", "caida"]);
+const PLAYABLE_GAME_IDS = new Set(["asteroides", "caida", "frogger"]);
 
 export function isPlayable(id: string): boolean {
   return PLAYABLE_GAME_IDS.has(id);

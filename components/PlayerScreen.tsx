@@ -7,6 +7,7 @@ import { useSession } from "@/components/SessionProvider";
 import { isPlayable, type TouchInputHandle } from "@/lib/game-registry";
 import { AsteroidsGame } from "@/components/AsteroidsGame";
 import { TetrisGame } from "@/components/TetrisGame";
+import { FroggerGame } from "@/components/FroggerGame";
 import { SkinSwitch } from "@/components/SkinSwitch";
 import { TouchControls } from "@/components/TouchControls";
 import { getTouchLayout } from "@/lib/touch-controls";
@@ -146,6 +147,15 @@ export function PlayerScreen({ game }: { game: Game }) {
             />
           ) : game.id === "caida" ? (
             <TetrisGame
+              key={playId}
+              running={!paused && !over}
+              onStats={handleStats}
+              onGameOver={endGame}
+              skin={skin}
+              touchInputRef={touchInputRef}
+            />
+          ) : game.id === "frogger" ? (
+            <FroggerGame
               key={playId}
               running={!paused && !over}
               onStats={handleStats}
